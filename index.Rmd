@@ -1,0 +1,27 @@
+---
+title: "Liwon Yang"
+image: "SDS365_HW1.jpeg"
+links:
+  - label: LinkedIn
+    url: "https://www.linkedin.com/in/liivvon/"
+  - label: Instagram
+    url: "https://www.instagram.com/liivvon_?igsi=MTZpcnEyNnBkMnZ6eA%3D%3D&utm_source=qr"
+  - label: GitHub
+    url: "https://github.com/liivvon"
+  - label: Email
+    url: "mailto:liivvon@utexas.edu"
+output:
+  postcards::jolla
+---
+
+Hi, I'm Liwon Yang, studying Cell and Molecular Biology at UT Austin. I'm planning on going to graduate school to study more about vaccines and medicines.
+
+Things I enjoy: 
+
+- watching Netflix 
+- dancing 
+- baking
+
+```{r}
+Sys.time()
+```
