@@ -22,7 +22,7 @@ Things I enjoy:
 - dancing 
 - baking
 
-HW2 : [Homework 2: PCA Image Compression](Homework-2--Image-Compression.html)
+HW2 : [PCA Image Compression](Homework-2--Image-Compression.html)
 
 ```{r}
 Sys.time()
