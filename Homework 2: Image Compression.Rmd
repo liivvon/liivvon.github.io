@@ -1,0 +1,206 @@
+---
+title: "Homework 2: Image Compression"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(readr)
+```
+
+## PCA Compression Function
+
+```{r}
+pca_compress <- function(x, k) {
+  V <- t(x) %*% x
+  eig <- eigen(V)
+  U <- eig$vectors
+  Z <- x %*% U
+  Uk <- U[, 1:k, drop = FALSE]
+  Zk <- Z[, 1:k, drop = FALSE]
+  X_k <- Zk %*% t(Uk)
+  err <- norm(x - X_k, type = "F")
+  return(list(approx = X_k, error = err))
+}
+
+load_image <- function(path) {
+  x <- read_csv(path, show_col_types = FALSE)
+  data.matrix(x)
+}
+
+show_image <- function(mat, main = "") {
+  image(t(apply(mat, 2, rev)), col = gray.colors(256), axes = FALSE, main = main)
+}
+
+error_curve <- function(x) {
+  V <- t(x) %*% x
+  eig <- eigen(V)
+  U <- eig$vectors
+  Z <- x %*% U
+  p <- ncol(x)
+  errors <- numeric(p)
+  for (k in 1:p) {
+    X_k <- Z[, 1:k, drop = FALSE] %*% t(U[, 1:k, drop = FALSE])
+    errors[k] <- norm(x - X_k, type = "F")
+  }
+  list(errors = errors, U = U, Z = Z)
+}
+```
+
+## Image 1
+
+```{r fig.width=10, fig.height=7}
+img1 <- load_image("image1.csv")
+par(mfrow = c(3, 4), mar = c(1,1,2,1))
+show_image(img1, main = "Original")
+for (k in 1:10) {
+  res <- pca_compress(img1, k)
+  show_image(res$approx, main = paste0("k = ", k))
+}
+```
+
+```{r fig.width=7, fig.height=4}
+par(mfrow = c(1, 1))
+ec1 <- error_curve(img1)
+plot(seq_along(ec1$errors), ec1$errors, type = "b", pch = 16,
+     xlab = "k (rank)", ylab = "Frobenius norm error",
+     main = "Image 1: Approximation Error vs k")
+```
+
+```{r fig.width=7, fig.height=4}
+plot(ec1$U[, 1], type = "l", xlab = "index", ylab = "value",
+     main = "Image 1: First eigenvector (u1)")
+plot(ec1$Z[, 1], type = "l", xlab = "row index", ylab = "value",
+     main = "Image 1: First PC score (z1)")
+```
+
+The first eigenvector shows a sharp spike at one specific column,
+corresponding to the dark vertical bar in the image, while the rest
+of the eigenvector is near zero. The first PC score fluctuates
+noisily across all rows, since the background texture in this image
+is essentially random noise rather than smooth structure. Because
+the error decreases nearly linearly with k, this image is a poor
+candidate for low-rank compression — most of its variance is spread
+across many components rather than concentrated in a few.
+
+**My opinion**: Given the near-linear error curve, no small k gives
+a visually adequate approximation. Even k = 10 looks almost
+identical to k = 1.
+
+## Image 2
+
+```{r fig.width=10, fig.height=7}
+img2 <- load_image("image2.csv")
+par(mfrow = c(3, 4), mar = c(1,1,2,1))
+show_image(img2, main = "Original")
+for (k in 1:10) {
+  res <- pca_compress(img2, k)
+  show_image(res$approx, main = paste0("k = ", k))
+}
+```
+
+```{r fig.width=7, fig.height=4}
+par(mfrow = c(1, 1))
+ec2 <- error_curve(img2)
+plot(seq_along(ec2$errors), ec2$errors, type = "b", pch = 16,
+     xlab = "k (rank)", ylab = "Frobenius norm error",
+     main = "Image 2: Approximation Error vs k")
+```
+
+```{r fig.width=7, fig.height=4}
+plot(ec2$U[, 1], type = "l", xlab = "index", ylab = "value",
+     main = "Image 2: First eigenvector (u1)")
+plot(ec2$Z[, 1], type = "l", xlab = "row index", ylab = "value",
+     main = "Image 2: First PC score (z1)")
+```
+
+The first eigenvector is a smooth, monotonically decreasing ramp
+across the columns, capturing the dominant large-scale gradient in
+the image. The first PC score varies irregularly from row to row,
+reflecting how strongly each row expresses that gradient pattern.
+Notably, the approximation error drops sharply after k = 1,
+indicating this image is nearly rank-1 — a single component is
+enough to reconstruct it almost perfectly.
+
+**My opinion**: k = 1 or k = 2 is already sufficient — the
+approximation is visually indistinguishable from the original at
+these values.
+
+## Image 3
+
+```{r fig.width=10, fig.height=7}
+img3 <- load_image("image3.csv")
+par(mfrow = c(3, 4), mar = c(1,1,2,1))
+show_image(img3, main = "Original")
+for (k in 1:10) {
+  res <- pca_compress(img3, k)
+  show_image(res$approx, main = paste0("k = ", k))
+}
+```
+
+```{r fig.width=7, fig.height=4}
+par(mfrow = c(1, 1))
+ec3 <- error_curve(img3)
+plot(seq_along(ec3$errors), ec3$errors, type = "b", pch = 16,
+     xlab = "k (rank)", ylab = "Frobenius norm error",
+     main = "Image 3: Approximation Error vs k")
+```
+
+```{r fig.width=7, fig.height=4}
+plot(ec3$U[, 1], type = "l", xlab = "index", ylab = "value",
+     main = "Image 3: First eigenvector (u1)")
+plot(ec3$Z[, 1], type = "l", xlab = "row index", ylab = "value",
+     main = "Image 3: First PC score (z1)")
+```
+
+The first eigenvector shows a smooth, wave-like pattern that mirrors
+the overall brightness structure of the image from top to bottom.
+The first PC score forms a bell-shaped curve, rising as the rows
+move from the bright bedding into the darker body of the puppy and
+back to lighter background. This reflects the image's large-scale,
+spatially smooth intensity variation, which PCA can compress
+efficiently.
+
+**My opinion**: k ≈ 8-10 gives a visually adequate approximation —
+the puppy's shape, ear position, and shading become clearly
+recognizable by around k = 8, and results beyond that show
+diminishing returns.
+
+## Image 4
+
+```{r fig.width=10, fig.height=7}
+img4 <- load_image("image4.csv")
+par(mfrow = c(3, 4), mar = c(1,1,2,1))
+show_image(img4, main = "Original")
+for (k in 1:10) {
+  res <- pca_compress(img4, k)
+  show_image(res$approx, main = paste0("k = ", k))
+}
+```
+
+```{r fig.width=7, fig.height=4}
+par(mfrow = c(1, 1))
+ec4 <- error_curve(img4)
+plot(seq_along(ec4$errors), ec4$errors, type = "b", pch = 16,
+     xlab = "k (rank)", ylab = "Frobenius norm error",
+     main = "Image 4: Approximation Error vs k")
+```
+
+```{r fig.width=7, fig.height=4}
+plot(ec4$U[, 1], type = "l", xlab = "index", ylab = "value",
+     main = "Image 4: First eigenvector (u1)")
+plot(ec4$Z[, 1], type = "l", xlab = "row index", ylab = "value",
+     main = "Image 4: First PC score (z1)")
+```
+
+The first eigenvector displays several smooth peaks and valleys
+corresponding to alternating light and dark regions (e.g., rooftops
+versus roads or shadows). The first PC score follows a similar
+pattern with a sharp dip in the middle, likely marking a distinct
+dark structure such as a shadow or building edge. The relatively
+smooth structure allows the image to be compressed effectively
+within a moderate number of components.
+
+**My opinion**: k ≈ 6-7 is enough to make the main structures
+(buildings, roads, shadows) clearly identifiable, though a few fine
+details keep sharpening slightly up to k = 10.
